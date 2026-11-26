@@ -1,39 +1,37 @@
 
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from app.modules.news.models import News
+from app.modules.news import mock_store
 
 
-async def get_home_feed(db: AsyncSession):
-    result = await db.execute(
-        select(News)
-        .where(News.status == "published")
-        .order_by(News.created_at.desc())
-        .limit(20)
-    )
-    return result.scalars().all()
+# Get published news only
+def get_published_news():
+    return [
+        news for news in mock_store.news_data
+        if news["status"] == "published"
+    ]
 
 
-async def get_local_feed(db: AsyncSession, location: str):
-    result = await db.execute(
-        select(News)
-        .where(
-            News.status == "published",
-            News.location == location
-        )
-        .order_by(News.created_at.desc())
-    )
-    return result.scalars().all()
+# Home Feed
+def get_home_feed():
+    return get_published_news()
 
 
-async def get_breaking_feed(db: AsyncSession):
-    result = await db.execute(
-        select(News)
-        .where(
-            News.status == "published",
-            News.is_breaking == True
-        )
-        .order_by(News.created_at.desc())
-    )
-    return result.scalars().all()
+# Local Feed
+def get_local_feed(location: str):
+    return [
+        news for news in get_published_news()
+        if news["location"]
+        and news["location"].lower() == location.lower()
+    ]
+
+
+# Breaking News Feed
+def get_breaking_feed():
+    return [
+        news for news in get_published_news()
+        if news["is_breaking"] is True
+    ]
+
+
+# Trending News Feed
+def get_trending_feed():
+    return get_published_news()
